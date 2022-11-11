@@ -2,10 +2,17 @@
   "extends": "@vue/tsconfig/tsconfig.web.json",
   "include": ["env.d.ts", "src/**/*", "src/**/*.vue"],
   "compilerOptions": {
+    "isolatedModules": false,
     "baseUrl": ".",
     "noImplicitAny": true,
+    "experimentalDecorators": true,
+    "lib": [
+      "ES2021",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@public/*": ["./public/*"]
     }
   },
 

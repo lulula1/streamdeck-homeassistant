@@ -1,6 +1,3 @@
-import { createApp } from 'vue'
-import Plugin from './Plugin.vue'
+// The plugin doesn't have to be VueJS
 
-import '../assets/main.css'
-
-createApp(Plugin).mount('#app')
+// TODO

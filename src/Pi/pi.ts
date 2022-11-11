@@ -1,6 +1,7 @@
-import { createApp } from 'vue'
-import Pi from './Pi.vue'
+import { createApp } from 'vue';
+import Pi from './Pi.vue';
 
-import '../assets/main.css'
+import '../assets/sdpi.css';
+
 
 createApp(Pi).mount('#app')

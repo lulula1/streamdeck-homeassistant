@@ -1,0 +1,42 @@
+{
+  "Actions": [
+    {
+      "Icon": "images/light-icon",
+      "Name": "Light",
+      "PropertyInspectorPath": "pi.html",
+      "States": [
+        {
+          "Image": "images/actions/light/light-off"
+        },
+        {
+          "Image": "images/actions/light/light-on"
+        }
+      ],
+      "SupportedInMultiActions": true,
+      "UUID": "fr.lulula1.streamdeck.homeassistant.light"
+    }
+  ],
+  "Category": "Home Assistant Custom",
+  "CategoryIcon": "images/category",
+  "SDKVersion": 2,
+  "Author": "lulula1",
+  "CodePath": "plugin.html",
+  "Description": "Control your Home Assistant entities with stream deck. Inspired from Christoph Giesche's Home Assistant plugin.",
+  "Name": "Home Assistant Custom",
+  "Icon": "images/plugin/plugin",
+  "URL": "https://github.com/lulula1/streamdeck-homeassistant",
+  "Version": "0.1.0",
+  "OS": [
+    {
+      "Platform": "mac",
+      "MinimumVersion": "10.11"
+    },
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10"
+    }
+  ],
+  "Software": {
+    "MinimumVersion": "4.1"
+  }
+}
