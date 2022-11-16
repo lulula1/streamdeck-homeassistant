@@ -16,7 +16,7 @@ export default defineConfig({
     }
   },
   build: {
-    outDir: "./fr.lulula1.streamdeck.homeassistant.sdPlugin",
+    outDir: resolve(process.env.APPDATA || '.', 'Elgato/StreamDeck/Plugins/fr.lulula1.streamdeck.homeassistant.sdPlugin'),
     emptyOutDir: false,
     minify: false,
     rollupOptions: {
