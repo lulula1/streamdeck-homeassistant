@@ -239,3 +239,23 @@ export const awaitSDConnection = (sd: StreamDeck) => new Promise<void>((res, rej
         sd.once('error', rej)
     }
 });
+
+
+
+
+export interface ActionEvent {
+    action: string;
+    event: string;
+    context: string;
+    device: string;
+    payload: {
+        settings: any;
+        coordinates: {
+            column: number;
+            row: number;
+        }
+        state: number;
+        userDesiredState: number;
+        isInMultiAction: boolean;
+    }
+}
