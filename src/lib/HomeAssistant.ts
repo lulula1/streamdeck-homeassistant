@@ -27,9 +27,13 @@ export class HomeAssistant extends EventEmitter implements Connectable {
                 this.sendAuthentication();
                 break;
             case 'result':
-            case 'event':
                 if (this.requests.has(messageData.id)) {
                     this.requests.get(messageData.id)!(messageData.result);
+                }
+                break;
+            case 'event':
+                if (this.requests.has(messageData.id)) {
+                    this.requests.get(messageData.id)!(messageData.event);
                 }
                 break;
             case 'auth_ok':
@@ -103,11 +107,9 @@ export class HomeAssistant extends EventEmitter implements Connectable {
             .then(services => services[domain]);
     }
 
-    public subscribeEvents(): Promise<void> {
-        return new Promise((res) => {
-            let subscribeEventCommand = new SubscribeEventCommand(this.nextRequestId());
-            this.sendCommand(subscribeEventCommand, res);
-        });
+    public subscribeEvents(callback: Function): void {
+        let subscribeEventCommand = new SubscribeEventCommand(this.nextRequestId());
+        this.sendCommand(subscribeEventCommand, callback);
     }
 
     public callService(domain: string, service: string, serviceData: Object): Promise<void> {
