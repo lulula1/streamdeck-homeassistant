@@ -1,6 +1,7 @@
 import { EventEmitter } from "./EventEmitter";
+import type { Connectable } from "./Utils";
 
-abstract class StreamDeck extends EventEmitter {
+abstract class StreamDeck extends EventEmitter implements Connectable {
     private streamDeckWebsocket: WebSocket;
 
     protected readonly info: any;
@@ -230,16 +231,6 @@ export class StreamDeckPI extends StreamDeck {
         return this.devices[this.actionInfo.device]!;
     }
 }
-
-export const awaitSDConnection = (sd: StreamDeck) => new Promise<void>((res, rej) => {
-    if (sd.isConnected()) {
-        res();
-    } else {
-        sd.once('connected', res);
-        sd.once('error', rej)
-    }
-});
-
 
 
 

@@ -1,6 +1,7 @@
 import { EventEmitter } from './EventEmitter';
+import type { Connectable } from './Utils';
 
-export class HomeAssistant extends EventEmitter {
+export class HomeAssistant extends EventEmitter implements Connectable {
 
     private requests: Map<number, Function>;
     private requestIdSequence: number;
@@ -59,6 +60,10 @@ export class HomeAssistant extends EventEmitter {
         return ++this.requestIdSequence;
     }
 
+    public isConnected() {
+        return this.websocket.readyState === WebSocket.OPEN;
+    }
+
     public close(): void {
         this.websocket.onclose = null;
         if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
@@ -71,6 +76,11 @@ export class HomeAssistant extends EventEmitter {
             let getStatesCommand = new GetStatesCommand(this.nextRequestId());
             this.sendCommand(getStatesCommand, res);
         });
+    }
+
+    public getStatesByDomain(domain: string): Promise<State[]> {
+        return this.getStates()
+            .then(states => states.filter(state => state.entity_id.startsWith(domain + '.')));
     }
 
     public getServices(): Promise<DomainServices> {
@@ -86,6 +96,11 @@ export class HomeAssistant extends EventEmitter {
                 ));
             });
         });
+    }
+
+    public getServicesByDomain(domain: string) {
+        return this.getServices()
+            .then(services => services[domain]);
     }
 
     public subscribeEvents(): Promise<void> {
