@@ -154,14 +154,32 @@ export class StreamDeckPlugin extends StreamDeck {
         });
     }
 
-    public setImage(context: string, image: string): void {
+    public setImage(context: string, image: string, state: number = 0): void {
         this.sendmessage({
             event: "setImage",
             context,
             payload: {
-                image: image,
+                image,
                 target: ["software", "hardware"],
-                state: 0
+                state
+            }
+        });
+    }
+
+    public setFeedback(context: string, properties: Record<string, any>): void {
+        this.sendmessage({
+            event: "setFeedback",
+            context,
+            payload: properties
+        });
+    }
+
+    public setFeedbackLayout(context: string, layout: string): void {
+        this.sendmessage({
+            event: "setFeedbackLayout",
+            context,
+            payload: {
+                layout
             }
         });
     }
