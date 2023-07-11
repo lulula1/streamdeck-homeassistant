@@ -13,7 +13,7 @@
         }
       ],
       "SupportedInMultiActions": true,
-      "UUID": "fr.lulula1.streamdeck.homeassistant.light"
+      "UUID": "fr.lulula1.homeassistant.light"
     }
   ],
   "Category": "Home Assistant Custom",
