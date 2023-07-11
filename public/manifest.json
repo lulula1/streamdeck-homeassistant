@@ -2,8 +2,8 @@
   "Actions": [
     {
       "Icon": "images/light-icon",
-      "Name": "Light",
-      "PropertyInspectorPath": "pi.html",
+      "Name": "Service action",
+      "PropertyInspectorPath": "pi-services.html",
       "States": [
         {
           "Image": "images/actions/light/light-off"

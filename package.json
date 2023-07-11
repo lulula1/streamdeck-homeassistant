@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
-    "build": "run-p type-check \"build-only -c vite.config.ts -- --file=plugin.html\" \"build-only -c vite.config.ts -- --file=pi.html\"",
+    "build": "run-p type-check \"build-only -c vite.config.ts -- --file=plugin.html\" \"build-only -c vite.config.ts -- --file=pi-services.html\"",
     "preview": "vite preview --port 4173",
     "build-only": "vite build",
     "type-check": "vue-tsc --noEmit"

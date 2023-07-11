@@ -1,10 +1,10 @@
 import { createApp } from 'vue';
-import Pi from './Pi.vue';
+import PiServices from './PiServices.vue';
 
 import '../assets/sdpi.css';
 import VueStreamDeck from '../components/StreamDeck';
 
 
-createApp(Pi)
+createApp(PiServices)
     .use(VueStreamDeck)
     .mount('#app');
