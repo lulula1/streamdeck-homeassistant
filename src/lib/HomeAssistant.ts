@@ -1,22 +1,80 @@
-import { EventEmitter } from './EventEmitter';
-import type { Connectable } from './Utils';
+import { TypedEventEmitter } from './TypedEventEmitter';
+import type { Connectable, ConnectableEvents } from './Utils';
 
-export class HomeAssistant extends EventEmitter implements Connectable {
+// Complete later with needed events
+type HomeAssistantEvents = {
+};
 
-    private requests: Map<number, Function>;
-    private requestIdSequence: number;
-    private readonly websocket: WebSocket;
+class HomeAssistantApi {
+
+    private readonly url: string;
     private readonly accessToken: string;
 
     constructor(url: string, accessToken: string) {
+        this.url = this.getApiUrl(url);
+        this.accessToken = accessToken;
+    }
+
+    private getApiUrl(url: string) {
+        const wsUrl = new URL(url);
+        const host = wsUrl.host;
+        const pathname = wsUrl.pathname.split("/api/websocket").shift() || '';
+        const protocol = wsUrl.protocol === 'wss:' ? 'https' : 'http';
+        return protocol + '://' + host + pathname;
+    }
+
+    private fetchJson<T>(method: string, path: string, body: any, headers: Record<string, string>): Promise<T> {
+        return fetch(this.url + path, {
+            method,
+            body,
+            headers: {
+                ...headers,
+                'Authorization': `Bearer ${this.accessToken}`
+            }
+        }).then(res => res.json());
+    }
+
+    public get<T>(path: string, headers: Record<string, string> = {}): Promise<T> {
+        return this.fetchJson('GET', path, null, headers);
+    }
+
+    public post<T>(path: string, body: any, headers: Record<string, string> = {}): Promise<T> {
+        return this.fetchJson('GET', path, body, headers);
+    }
+}
+
+export class HomeAssistant extends TypedEventEmitter<ConnectableEvents & HomeAssistantEvents> implements Connectable {
+
+    private requests!: Map<number, Function>;
+    private requestIdSequence!: number;
+    private websocket!: WebSocket;
+    private readonly api: HomeAssistantApi;
+
+    constructor(public readonly url: string, private readonly accessToken: string) {
         super();
+        this.connectWebsocket();
+        this.api = new HomeAssistantApi(url, accessToken);
+    }
+
+    private connectWebsocket(): void {
         this.requests = new Map();
         this.requestIdSequence = 1;
-        this.websocket = new WebSocket(url);
-        this.accessToken = accessToken;
-        this.websocket.onmessage = (evt) => this.handleMessage(evt);
-        this.websocket.onerror = () => this.emit('error', 'Failed to connect to ' + url);
-        this.websocket.onclose = this.emit.bind(this, 'close');
+        this.websocket = new WebSocket(this.url);
+        this.websocket.onmessage = this.handleMessage.bind(this);
+        this.websocket.onerror = this.handleWebsocketError.bind(this);
+        this.websocket.onclose = this.handleWebsocketClose.bind(this);
+    }
+
+    private handleWebsocketError() {
+        this.emit('error', 'Failed to connect to ' + this.url);
+        this.websocket.close();
+    }
+
+    private handleWebsocketClose() {
+        this.emit('disconnected');
+        setTimeout(() => {
+            this.connectWebsocket();
+        }, 5000);
     }
 
     private handleMessage(msg: MessageEvent<any>): void {
@@ -73,6 +131,10 @@ export class HomeAssistant extends EventEmitter implements Connectable {
         if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
             this.websocket.close();
         }
+    }
+
+    public getState(entityId: string): Promise<State> {
+        return this.api.get(`/api/states/${entityId}`);
     }
 
     public getStates(): Promise<State[]> {

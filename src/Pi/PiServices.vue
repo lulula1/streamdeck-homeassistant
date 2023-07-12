@@ -1,47 +1,33 @@
-<script setup lang="ts">
-import HelloWorld from '../components/HelloWorld.vue'
-import TheWelcome from '../components/TheWelcome.vue'
-</script>
-
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="../assets/logo.svg" width="125" height="125" />
-
-    <div class="wrapper">
-      <HelloWorld msg="PI" />
-    </div>
-  </header>
-
-  <main>
-    <TheWelcome />
-  </main>
+    <SDWrapper>
+        <HAServerConfig></HAServerConfig>
+        <HAPressConfig></HAPressConfig>
+        <HALongPressConfig></HALongPressConfig>
+    </SDWrapper>
 </template>
 
-<style scoped>
-header {
-  line-height: 1.5;
-}
+<script lang="ts" setup>
+import { provide, ref } from 'vue';
+import { StreamDeckPI } from '../lib/StreamDeck';
+import { HomeAssistant } from '../lib/HomeAssistant';
+import { waitForConnectable, waitForRef } from '../lib/Utils';
+import HAServerConfig from '../components/HAServerConfig.vue';
+import HAPressConfig from '../components/HAPressConfig.vue';
+import HALongPressConfig from '../components/HALongPressConfig.vue';
 
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
+const SDRef = ref<StreamDeckPI>();
+const HARef = ref<HomeAssistant>();
 
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
+provide('SD', SDRef);
+provide('HA', HARef);
 
-  .logo {
-    margin: 0 2rem 0 0;
-  }
+(window as any).connectElgatoStreamDeckSocket = async (inPort: string, inUUID: string, inRegisterEvent: string, inInfo: string, inActionInfo: string) => {
+    SDRef.value = new StreamDeckPI(inPort, inUUID, inRegisterEvent, inInfo, inActionInfo || "{}");
+    const SD = await waitForRef(SDRef);
 
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-}
-</style>
+    await waitForConnectable(SD);
+
+    const settings = await SD.getGlobalSettings();
+    HARef.value = new HomeAssistant(settings.haUrl, settings.haToken);
+};
+</script>

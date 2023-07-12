@@ -16,7 +16,14 @@
       "UUID": "fr.lulula1.homeassistant.light"
     }
   ],
-  "Category": "Home Assistant Custom",
+  "Profiles": [
+    {
+      "Name": "Profiles/Home Assistant Mini.streamDeckProfile",
+      "DeviceType": 1,
+      "DontAutoSwitchWhenInstalled": true
+    }
+  ],
+  "Category": "Home Assistant",
   "CategoryIcon": "images/category",
   "SDKVersion": 2,
   "Author": "lulula1",

@@ -1,7 +1,8 @@
-import { EventEmitter } from "./EventEmitter";
-import type { Connectable } from "./Utils";
+import { EventMap, TypedEventEmitter } from './TypedEventEmitter';
+import type { Connectable } from './Utils';
 
-abstract class StreamDeck extends EventEmitter implements Connectable {
+abstract class StreamDeck extends TypedEventEmitter<any> implements Connectable {
+
     private streamDeckWebsocket: WebSocket;
 
     protected readonly info: any;
@@ -16,16 +17,17 @@ abstract class StreamDeck extends EventEmitter implements Connectable {
         this.propertyInspectorUUID = inPropertyInspectorUUID;
 
         this.streamDeckWebsocket = new WebSocket('ws://localhost:' + inPort);
-        this.streamDeckWebsocket.onopen = () => {
-            let json = {
-                event: inRegisterEvent,
-                uuid: inPropertyInspectorUUID
-            };
-            this.streamDeckWebsocket.send(JSON.stringify(json));
-            this.emit("connected", this.actionInfo);
-        };
-        this.streamDeckWebsocket.onclose = () => this.emit("disconnected");
+        this.streamDeckWebsocket.onopen = this.sendAuthentication.bind(this, inRegisterEvent, inPropertyInspectorUUID);
+        this.streamDeckWebsocket.onclose = this.emit.bind(this, 'disconnected');
         this.streamDeckWebsocket.onmessage = this.onmessage.bind(this);
+    }
+
+    private sendAuthentication(event: string, uuid: string): void {
+        this.streamDeckWebsocket.send(JSON.stringify({
+            event,
+            uuid
+        }));
+        this.emit('connected', this.actionInfo);
     }
 
     private onmessage(message: MessageEvent): void {
@@ -39,25 +41,23 @@ abstract class StreamDeck extends EventEmitter implements Connectable {
         // Method not abstract because overwritting is optional 
     }
 
-    protected sendmessage(message: object): void {
-        this.streamDeckWebsocket.send(JSON.stringify(message));
+    protected sendmessage(event: string, message: object): void {
+        this.streamDeckWebsocket.send(JSON.stringify({ event, ...message }));
     }
 
-    public isConnected() {
+    public isConnected(): boolean {
         return this.streamDeckWebsocket.readyState === WebSocket.OPEN;
     }
 
     public setSettings(actionSettings: object): void {
-        this.sendmessage({
-            event: "setSettings",
+        this.sendmessage('setSettings', {
             context: this.propertyInspectorUUID,
             payload: actionSettings
         });
     }
 
     public async addSettings(actionSettings: object): Promise<void> {
-        this.sendmessage({
-            event: "setSettings",
+        this.sendmessage('setSettings', {
             context: this.propertyInspectorUUID,
             payload: {
                 ...await this.getSettings(),
@@ -66,25 +66,22 @@ abstract class StreamDeck extends EventEmitter implements Connectable {
         });
     }
 
-    public getSettings(): Promise<any> {
-        this.sendmessage({
-            event: "getSettings",
-            context: this.propertyInspectorUUID
+    public getSettings(context?: string): Promise<any> {
+        this.sendmessage('getSettings', {
+            context: context || this.propertyInspectorUUID
         });
-        return new Promise((res) => this.once("didReceiveSettings", (ev: any) => res(ev?.payload?.settings)));
+        return new Promise((res) => this.once('didReceiveSettings', (ev: any) => res(ev?.payload?.settings)));
     }
 
     public setGlobalSettings(settings: object): void {
-        this.sendmessage({
-            event: "setGlobalSettings",
+        this.sendmessage('setGlobalSettings', {
             context: this.propertyInspectorUUID,
             payload: settings
         });
     }
 
     public async addGlobalSettings(settings: object): Promise<void> {
-        this.sendmessage({
-            event: "setGlobalSettings",
+        this.sendmessage('setGlobalSettings', {
             context: this.propertyInspectorUUID,
             payload: {
                 ...await this.getGlobalSettings(),
@@ -94,32 +91,32 @@ abstract class StreamDeck extends EventEmitter implements Connectable {
     }
 
     public getGlobalSettings(): Promise<any> {
-        this.sendmessage({
-            event: "getGlobalSettings",
+        this.sendmessage('getGlobalSettings', {
             context: this.propertyInspectorUUID
         });
-        return new Promise((res) => this.once("didReceiveGlobalSettings", (ev: any) => res(ev?.payload?.settings)));
+        return new Promise((res) => this.once('didReceiveGlobalSettings', (ev: any) => res(ev?.payload?.settings)));
     }
 
     public openUrl(url: string): void {
-        this.sendmessage({
-            event: "openUrl",
-            payload: { url }
+        this.sendmessage('openUrl', {
+            payload: {
+                url
+            }
         });
     }
 
     public log(...args: any): void {
         console.log(...args);
-        this.sendmessage({
-            event: "logMessage",
+        this.sendmessage('logMessage', {
             payload: {
-                message: args.join(" ")
+                message: args.join(' ')
             }
         });
     }
 }
 
 export class StreamDeckPlugin extends StreamDeck {
+
     private keyDownDates = new Map<string, number>();
 
     constructor(inPort: string, inPropertyInspectorUUID: string, inRegisterEvent: string, inInfo: string, inActionInfo: string) {
@@ -128,55 +125,55 @@ export class StreamDeckPlugin extends StreamDeck {
 
     protected handleMessage(ev: any): void {
         const context = ev.context;
-        if (ev.event === "keyDown") {
+        if (ev.event === 'keyDown') {
             const timeout = setTimeout(() => {
                 this.keyDownDates.delete(context);
-                this.emit("longKeyPress", ev);
+                this.emit('longKeyPress', ev);
             }, 300);
             this.keyDownDates.set(context, timeout);
-        } else if (ev.event === "keyUp") {
+        } else if (ev.event === 'keyUp') {
             if (this.keyDownDates.has(context)) {
                 clearTimeout(this.keyDownDates.get(context));
                 this.keyDownDates.delete(context);
-                this.emit("keyPress", ev);
+                this.emit('keyPress', ev);
             }
         }
     }
 
+    public getSettings(context: string): Promise<any> {
+        return super.getSettings(context);
+    }
+
     public setTitle(context: string, title: string): void {
-        this.sendmessage({
-            event: "setTitle",
+        this.sendmessage('setTitle', {
             context,
             payload: {
                 title: title,
-                target: ["software", "hardware"]
+                target: ['software', 'hardware']
             }
         });
     }
 
-    public setImage(context: string, image: string, state: number = 0): void {
-        this.sendmessage({
-            event: "setImage",
+    public setImage(context: string, image: string, state?: number): void {
+        this.sendmessage('setImage', {
             context,
             payload: {
                 image,
-                target: ["software", "hardware"],
+                target: ['software', 'hardware'],
                 state
             }
         });
     }
 
     public setFeedback(context: string, properties: Record<string, any>): void {
-        this.sendmessage({
-            event: "setFeedback",
+        this.sendmessage('setFeedback', {
             context,
             payload: properties
         });
     }
 
     public setFeedbackLayout(context: string, layout: string): void {
-        this.sendmessage({
-            event: "setFeedbackLayout",
+        this.sendmessage('setFeedbackLayout', {
             context,
             payload: {
                 layout
@@ -185,43 +182,36 @@ export class StreamDeckPlugin extends StreamDeck {
     }
 
     public showAlert(context: string): void {
-        this.sendmessage({
-            event: "showAlert",
+        this.sendmessage('showAlert', {
             context,
         });
     }
 
     public showOk(context: string): void {
-        this.sendmessage({
-            event: "showOk",
+        this.sendmessage('showOk', {
             context,
         });
     }
 
     public setState(context: string, state: number): void {
-        this.sendmessage({
-            event: "setState",
+        this.sendmessage('setState', {
             context,
             payload: { state }
         });
     }
 
     public switchToProfile(device: string, profile: string): void {
-        this.sendmessage({
-            event: "switchToProfile",
+        this.sendmessage('switchToProfile', {
             context: this.propertyInspectorUUID,
             device,
-            payload: {
-                profile: profile
-            }
+            payload: { profile }
         });
     }
 
     public sendToPI(action: string, context: string, data: object): void {
-        this.sendmessage({
-            action: action,
-            event: "sendToPropertyInspector",
-            context: context,
+        this.sendmessage('sendToPropertyInspector', {
+            action,
+            context,
             payload: data
         });
     }
@@ -236,10 +226,13 @@ export class StreamDeckPI extends StreamDeck {
         this.devices = Object.fromEntries(this.info.devices.map((d: any) => [d.id, d]));
     }
 
+    public getSettings(): Promise<any> {
+        return super.getSettings();
+    }
+
     public sendToPlugin(data: object): void {
-        this.sendmessage({
+        this.sendmessage('sendToPlugin', {
             action: this.actionInfo.action,
-            event: "sendToPlugin",
             context: this.propertyInspectorUUID,
             payload: data
         });
