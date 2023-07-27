@@ -4,6 +4,8 @@
   --sdpi-color: #d8d8d8;
   --sdpi-bordercolor: #3a3a3a;
   --sdpi-buttonbordercolor: #969696;
+  --sdpi-secondary-color: #42b883;
+  --sdpi-secondary-bordercolor: #215c42;
   --sdpi-borderradius: 0px;
   --sdpi-width: 224px;
   --sdpi-fontweight: 600;
@@ -16,6 +18,8 @@ html {
   --sdpi-color: #d8d8d8;
   --sdpi-bordercolor: #3a3a3a;
   --sdpi-buttonbordercolor: #969696;
+  --sdpi-secondary-color: #42b883;
+  --sdpi-secondary-bordercolor: #215c42;
   --sdpi-borderradius: 0px;
   --sdpi-width: 224px;
   --sdpi-fontweight: 600;
@@ -1211,9 +1215,9 @@ input[type="range"]::-webkit-slider-thumb {
   margin-top:22px;
 }
 
-:disabled {
+/* :disabled {
   color: #993333;
-}
+} */
 
 select,
 select option {

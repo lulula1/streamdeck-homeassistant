@@ -22,7 +22,7 @@ let profiles: any[] = manifest.Profiles;
 let profile = ref<string>();
 
 // Keep filename and exclude trailing extensions
-const getFileName = (name: string) => /[\\\/](.*)\..*?$/.exec(name)?.[1];
+const getFileName = (name: string) => /[\\\/]([^\.]*)\..*?$/.exec(name)?.[1].replaceAll('_', ' ').replaceAll('!', '|');
 
 const saveProfile = () => {
     SD.addSettings({

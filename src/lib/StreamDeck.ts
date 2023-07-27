@@ -7,17 +7,17 @@ abstract class StreamDeck extends TypedEventEmitter<any> implements Connectable 
 
     protected readonly info: any;
     protected readonly actionInfo: any;
-    protected readonly propertyInspectorUUID: string;
+    protected readonly uuid: string;
 
-    constructor(inPort: string, inPropertyInspectorUUID: string, inRegisterEvent: string, inInfo: string, inActionInfo: string) {
+    constructor(inPort: string, inUUID: string, inRegisterEvent: string, inInfo: string, inActionInfo: string) {
         super();
         this.info = JSON.parse(inInfo);
         this.actionInfo = JSON.parse(inActionInfo);
 
-        this.propertyInspectorUUID = inPropertyInspectorUUID;
+        this.uuid = inUUID;
 
         this.streamDeckWebsocket = new WebSocket('ws://localhost:' + inPort);
-        this.streamDeckWebsocket.onopen = this.sendAuthentication.bind(this, inRegisterEvent, inPropertyInspectorUUID);
+        this.streamDeckWebsocket.onopen = this.sendAuthentication.bind(this, inRegisterEvent, inUUID);
         this.streamDeckWebsocket.onclose = this.emit.bind(this, 'disconnected');
         this.streamDeckWebsocket.onmessage = this.onmessage.bind(this);
     }
@@ -51,14 +51,14 @@ abstract class StreamDeck extends TypedEventEmitter<any> implements Connectable 
 
     public setSettings(actionSettings: object): void {
         this.sendmessage('setSettings', {
-            context: this.propertyInspectorUUID,
+            context: this.uuid,
             payload: actionSettings
         });
     }
 
     public async addSettings(actionSettings: object): Promise<void> {
         this.sendmessage('setSettings', {
-            context: this.propertyInspectorUUID,
+            context: this.uuid,
             payload: {
                 ...await this.getSettings(),
                 ...actionSettings
@@ -68,21 +68,21 @@ abstract class StreamDeck extends TypedEventEmitter<any> implements Connectable 
 
     public getSettings(context?: string): Promise<any> {
         this.sendmessage('getSettings', {
-            context: context || this.propertyInspectorUUID
+            context: context || this.uuid
         });
         return new Promise((res) => this.once('didReceiveSettings', (ev: any) => res(ev?.payload?.settings)));
     }
 
     public setGlobalSettings(settings: object): void {
         this.sendmessage('setGlobalSettings', {
-            context: this.propertyInspectorUUID,
+            context: this.uuid,
             payload: settings
         });
     }
 
     public async addGlobalSettings(settings: object): Promise<void> {
         this.sendmessage('setGlobalSettings', {
-            context: this.propertyInspectorUUID,
+            context: this.uuid,
             payload: {
                 ...await this.getGlobalSettings(),
                 ...settings
@@ -92,7 +92,7 @@ abstract class StreamDeck extends TypedEventEmitter<any> implements Connectable 
 
     public getGlobalSettings(): Promise<any> {
         this.sendmessage('getGlobalSettings', {
-            context: this.propertyInspectorUUID
+            context: this.uuid
         });
         return new Promise((res) => this.once('didReceiveGlobalSettings', (ev: any) => res(ev?.payload?.settings)));
     }
@@ -202,7 +202,7 @@ export class StreamDeckPlugin extends StreamDeck {
 
     public switchToProfile(device: string, profile: string): void {
         this.sendmessage('switchToProfile', {
-            context: this.propertyInspectorUUID,
+            context: this.uuid,
             device,
             payload: { profile }
         });
@@ -233,7 +233,7 @@ export class StreamDeckPI extends StreamDeck {
     public sendToPlugin(data: object): void {
         this.sendmessage('sendToPlugin', {
             action: this.actionInfo.action,
-            context: this.propertyInspectorUUID,
+            context: this.uuid,
             payload: data
         });
     }
@@ -245,13 +245,13 @@ export class StreamDeckPI extends StreamDeck {
 
 
 
-export interface ActionEvent {
+export interface ActionEvent<T> {
     action: string;
     event: string;
     context: string;
     device: string;
     payload: {
-        settings: any;
+        settings: T;
         coordinates: {
             column: number;
             row: number;

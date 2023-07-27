@@ -39,7 +39,7 @@ class HomeAssistantApi {
     }
 
     public post<T>(path: string, body: any, headers: Record<string, string> = {}): Promise<T> {
-        return this.fetchJson('GET', path, body, headers);
+        return this.fetchJson('POST', path, body, headers);
     }
 }
 

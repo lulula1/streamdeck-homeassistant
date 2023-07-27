@@ -117,8 +117,8 @@ defineExpose({
     /* display: inline-block; */
     width: 12px;
     height: 12px;
-    border-top: 2px solid #42b883;
-    border-right: 2px solid #42b883;
+    border-top: 2px solid var(--sdpi-secondary-color);
+    border-right: 2px solid var(--sdpi-secondary-color);
     margin: 0 4px;
 }
 
@@ -166,7 +166,7 @@ defineExpose({
 }
 
 .card-carousel-cards .card-carousel--card--selected {
-    border-color: #42b883;
+    border-color: var(--sdpi-secondary-color);
 }
 
 .card-carousel-cards .card-carousel--card img {

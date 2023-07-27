@@ -1,13 +1,14 @@
 import { waitForConnectable } from '../lib/Utils';
 import { Entity, HomeAssistant, State } from '../lib/HomeAssistant';
 import { IconFactory } from '../lib/IconFactory';
-import { ActionEvent, StreamDeckPlugin } from '../lib/StreamDeck';
+import { StreamDeckPlugin } from '../lib/StreamDeck';
+import type { ActionEventHA, HASettings, SettingVariable } from 'src/lib/HASettings';
 
 const COLOR_TEMP_GRADIENT = ['#ffa200', '#ffa404', '#fea509', '#fea70d', '#fea811', '#fdaa16', '#fdab1a', '#fdad1e', '#fcae23', '#fcb027', '#fcb12b', '#fbb330', '#fbb434', '#fbb638', '#fab73d', '#fab941', '#faba45', '#f9bc49', '#f9bd4e', '#f9bf52', '#f8c156', '#f8c25b', '#f8c45f', '#f7c563', '#f7c768', '#f7c86c', '#f6ca70', '#f6cb75', '#f6cd79', '#f5ce7d', '#f5d082', '#f4d186', '#f4d38a', '#f4d48f', '#f3d693', '#f3d797', '#f3d99c', '#f2daa0', '#f2dca4', '#f2dda9', '#f1dfad', '#f1e1b1', '#f1e2b6', '#f0e4ba', '#f0e5be', '#f0e7c2', '#efe8c7', '#efeacb', '#efebcf', '#eeedd4'];
 
 (window as any).connectElgatoStreamDeckSocket = async (inPort: string, inUUID: string, inRegisterEvent: string, inInfo: string, inActionInfo: string) => {
     const SD = new StreamDeckPlugin(inPort, inUUID, inRegisterEvent, inInfo, inActionInfo || '{}');
-    const actionSettings: Record<string, any> = {};
+    const actionSettings: Record<string, HASettings> = {};
 
     await waitForConnectable(SD);
 
@@ -19,38 +20,37 @@ const COLOR_TEMP_GRADIENT = ['#ffa200', '#ffa404', '#fea509', '#fea70d', '#fea81
     HA.on('connected', () => {
         SD.log(`HomeAssistant connected on ${HA.url}`);
         HA.subscribeEvents((event: any) => {
-            console.log('aa', actionSettings, event);
+            SD.log('SubscribeEvents', event);
             Object.keys(actionSettings)
-                .filter((context) => actionSettings[context].state === event.data.entity_id)
+                .filter((context) => actionSettings[context].state.value === event.data.entity_id)
                 .map((context) => updateActionIcon(context, actionSettings[context], event.data.new_state));
         });
-        HA.getStates().then(console.log.bind(null, "GET STATES"));
     });
 
     // Update button icon when it appears to the user
     // and save its data for further use
-    SD.on('willAppear', async (message: any) => {
+    SD.on('willAppear', async (message: ActionEventHA) => {
         console.log('willAppear', message);
         const context = message.context;
         const settings = message.payload.settings;
         actionSettings[context] = settings;
-        HA.getState(settings.state)
+        HA.getState(settings.state.value)
             .then(updateActionIcon.bind(null, context, settings));
     });
 
     // Get rid of button data as it's not shown anymore
-    SD.on('willDisappear', (message: any) => {
+    SD.on('willDisappear', (message: ActionEventHA) => {
         console.log('willDisappear', message);
         const context = message.context;
         delete actionSettings[context];
     });
 
-    SD.on("didReceiveSettings", (message: any) => {
+    SD.on("didReceiveSettings", (message: ActionEventHA) => {
         console.log('didReceiveSettings', message);
         const context = message.context;
         const settings = message.payload.settings;
         actionSettings[context] = settings;
-        HA.getState(settings.state)
+        HA.getState(settings.state.value)
             .then(updateActionIcon.bind(null, context, settings));
     });
 
@@ -59,7 +59,6 @@ const COLOR_TEMP_GRADIENT = ['#ffa200', '#ffa404', '#fea509', '#fea70d', '#fea81
     const updateActionIcon = async (context: string, settings: any, state: State) => {
         const entity = new Entity(state.entity_id);
         const isOn = state.state === 'on';
-        console.log('state', state);
 
         const icon = await getStateIcon(entity, settings, state);
         icon && SD.setImage(context, icon);
@@ -87,21 +86,29 @@ const COLOR_TEMP_GRADIENT = ['#ffa200', '#ffa404', '#fea509', '#fea70d', '#fea81
         SD.log(`HomeAssistant error: ${error}`)
     });
 
-    SD.on('keyPress', (ev: ActionEvent) => {
+    const getSettingValue = <T>(setting: SettingVariable<T>, parentSetting?: SettingVariable<T>): T | undefined =>
+        setting.isVariable ? parentSetting?.value : setting.value;
+
+    SD.on('keyPress', async (ev: ActionEventHA) => {
         const { domain, service, state } = ev.payload.settings;
-        if (service && state) {
-            SD.log(`${service} ${domain} '${state}'`);
-            HA.callService(domain, service, { entity_id: state });
+        const { variableSettings }: { variableSettings?: HASettings } = await SD.getGlobalSettings();
+        const realDomain = getSettingValue(domain, variableSettings?.domain);
+        const realService = getSettingValue(service, variableSettings?.service);
+        const realState = getSettingValue(state, variableSettings?.state);
+        if (realDomain && realService && realState) {
+            SD.log(`${realService} ${realDomain} '${realState}'`);
+            HA.callService(realDomain, realService, { entity_id: realState });
         }
     })
 
-    SD.on('longKeyPress', (ev: ActionEvent) => {
+    SD.on('longKeyPress', (ev: ActionEventHA) => {
         SD.log('Long Key Press', ev);
         const device = ev.device;
         const settings = ev.payload.settings;
         const profile = settings.profile;
         if (profile) {
             SD.log(`Switching to profile '${profile}'`)
+            SD.addGlobalSettings({ variableSettings: settings });
             SD.switchToProfile(device, profile);
         }
     })

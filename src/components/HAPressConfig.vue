@@ -4,19 +4,23 @@
         @cardClick="onCardClick"></SDCarousel>
     <SDHeading>ENTITY</SDHeading>
     <SDItem label="Entity">
-        <SDSelect v-model="settings.state">
+        <SDSelect v-model="settings.state.value" :disabled="settings.state.isVariable">
             <option v-for="stateValue in states" :key="stateValue.entity_id" :value="stateValue.entity_id">
-                {{ stateValue.attributes.friendly_name || stateValue.entity_id }}
+                {{ settings.state.isVariable ? '...' : stateValue.attributes.friendly_name || stateValue.entity_id }}
             </option>
         </SDSelect>
+        <SDButton label="≈" :active="settings.state.isVariable" title="Toggle variable mode"
+            @click="settings.state.isVariable = !settings.state.isVariable" class="variable-mode-toggle"></SDButton>
     </SDItem>
     <SDHeading>PRESS CONFIGURATION</SDHeading>
     <SDItem label="Service">
-        <SDSelect v-model="settings.service">
+        <SDSelect v-model="settings.service.value" :disabled="settings.service.isVariable">
             <option v-for="serviceValue in services" :key="serviceValue.id" :value="serviceValue.id">
-                {{ serviceValue.name || serviceValue.id }}
+                {{ settings.service.isVariable ? '...' : serviceValue.name || serviceValue.id }}
             </option>
         </SDSelect>
+        <SDButton label="≈" :active="settings.service.isVariable" title="Toggle variable mode"
+            @click="settings.service.isVariable = !settings.service.isVariable" class="variable-mode-toggle"></SDButton>
     </SDItem>
 </template>
 
@@ -28,6 +32,7 @@ import { waitForRef, waitForConnectable } from '../lib/Utils';
 import type { CarouselValue } from './StreamDeck/SDCarousel.vue';
 import IconBuilder from '../lib/IconBuilder';
 import { IconFactory } from '../lib/IconFactory';
+import type { HASettings } from 'src/lib/HASettings';
 
 let SD: StreamDeckPI;
 let HA: HomeAssistant;
@@ -35,11 +40,11 @@ let HA: HomeAssistant;
 const states = ref<State[]>([]);
 const services = ref<Service[]>([]);
 const settings = reactive({
-    domain: 'light',
-    state: null as string | null,
-    service: null as string | null,
-    iconVariant: 0 as any,
-});
+    domain: { value: 'light' },
+    state: { value: '' },
+    service: { value: '' },
+    iconVariant: 0,
+}) as HASettings;
 
 const placeholderIcon = new IconBuilder(128, 128).fillColor('#0a1423').build();
 
@@ -63,14 +68,14 @@ const loadCarouselIcons = () => {
     Promise.all(
         domains.map(async domain => {
             const domainValue = domainValues.find(({ value }) => value === domain);
-            const iconVariant = settings.domain === domain ? settings.iconVariant : 0;
+            const iconVariant = settings.domain.value === domain ? settings.iconVariant : 0;
             const icon: Promise<string> | null = iconFactory.getIconVariantBuilder(domain as any, iconVariant)?.();
             domainValue && icon && (domainValue.src = await icon);
         })
     ).then(refreshCarousel);
 };
 
-const selectedDomainValues = computed(() => [domainValues.find(domainValue => domainValue.value === settings.domain)]);
+const selectedDomainValues = computed(() => [domainValues.find(domainValue => domainValue.value === settings.domain.value)]);
 
 const getServices = (domain: string): Promise<Service[]> => {
     return HA.getServicesByDomain(domain);
@@ -80,17 +85,17 @@ const getStates = (domain: string): Promise<State[]> => {
     return HA.getStatesByDomain(domain);
 }
 
-const onCardClick = (ev: MouseEvent, cardValue: CarouselValue, index: number) => {
+const onCardClick = (_ev: MouseEvent, cardValue: CarouselValue) => {
     if (!cardValue.value) return;
-    if (cardValue.value != settings.domain) {
-        settings.domain = cardValue.value;
+    if (cardValue.value != settings.domain.value) {
+        settings.domain.value = cardValue.value;
         settings.iconVariant = 0;
-        getStates(settings.domain)
+        getStates(settings.domain.value)
             .then(res => states.value = res)
-            .then(res => settings.state = (res || [])[0]?.entity_id || null);
-        getServices(settings.domain)
+            .then(res => settings.state.value = res?.[0]?.entity_id || '')
+        getServices(settings.domain.value)
             .then(res => services.value = res)
-            .then(res => settings.service = (res || [])[0]?.id || null);
+            .then(res => settings.service.value = res?.[0]?.id || '');
     } else {
         settings.iconVariant = (settings.iconVariant + 1) % iconFactory.getIconVariantLength(cardValue.value as any);
     }
@@ -106,9 +111,10 @@ onBeforeMount(async () => {
     await waitForConnectable(SD);
 
     SD.getSettings()
-        .then(savedSettings => {
+        .then((savedSettings: HASettings) => {
             SD.log('restore settings', savedSettings);
-            (Object.keys(settings) as Array<keyof typeof settings>)
+            (Object.keys(settings) as Array<keyof HASettings>)
+                // @ts-ignore
                 .forEach(settingKey => savedSettings[settingKey] && (settings[settingKey] = savedSettings[settingKey]));
         })
         .then(loadCarouselIcons);
@@ -118,9 +124,16 @@ onBeforeMount(async () => {
 
     HA.on('connected', async () => {
         if (settings.domain) {
-            getStates(settings.domain).then(res => states.value = res).then(res => settings.state = settings.state || (res || [])[0]?.entity_id);
-            getServices(settings.domain).then(res => services.value = res).then(res => settings.service = settings.service || (res || [])[0]?.id);
+            getStates(settings.domain.value).then(res => states.value = res).then(res => settings.state.value = settings.state.value || res?.[0]?.entity_id);
+            getServices(settings.domain.value).then(res => services.value = res).then(res => settings.service.value = settings.service.value || res?.[0]?.id);
         }
     });
 });
 </script>
+
+<style scoped>
+button.variable-mode-toggle {
+    flex: unset;
+    width: 25px;
+}
+</style>
