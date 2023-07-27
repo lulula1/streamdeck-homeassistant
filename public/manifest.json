@@ -18,7 +18,7 @@
   ],
   "Profiles": [
     {
-      "Name": "Profiles/Home Assistant Mini.streamDeckProfile",
+      "Name": "Profiles/Home_Assistant_!_Profile_1.sdmini",
       "DeviceType": 1,
       "DontAutoSwitchWhenInstalled": true
     }
