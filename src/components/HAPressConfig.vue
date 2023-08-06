@@ -32,7 +32,7 @@ import { waitForRef, waitForConnectable } from '../lib/Utils';
 import type { CarouselValue } from './StreamDeck/SDCarousel.vue';
 import IconBuilder from '../lib/IconBuilder';
 import { IconFactory } from '../lib/IconFactory';
-import type { HASettings } from 'src/lib/HASettings';
+import type { HAActionSettings } from '../lib/HASettings';
 
 let SD: StreamDeckPI;
 let HA: HomeAssistant;
@@ -44,7 +44,7 @@ const settings = reactive({
     state: { value: '' },
     service: { value: '' },
     iconVariant: 0,
-}) as HASettings;
+}) as HAActionSettings;
 
 const placeholderIcon = new IconBuilder(128, 128).fillColor('#0a1423').build();
 
@@ -111,9 +111,9 @@ onBeforeMount(async () => {
     await waitForConnectable(SD);
 
     SD.getSettings()
-        .then((savedSettings: HASettings) => {
+        .then((savedSettings: HAActionSettings) => {
             SD.log('restore settings', savedSettings);
-            (Object.keys(settings) as Array<keyof HASettings>)
+            (Object.keys(settings) as Array<keyof HAActionSettings>)
                 // @ts-ignore
                 .forEach(settingKey => savedSettings[settingKey] && (settings[settingKey] = savedSettings[settingKey]));
         })

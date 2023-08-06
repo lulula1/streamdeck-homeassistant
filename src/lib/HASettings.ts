@@ -5,7 +5,7 @@ export interface SettingVariable<T> {
     isVariable?: boolean;
 }
 
-export interface HASettings {
+export interface HAActionSettings {
     domain: SettingVariable<string>;
     service: SettingVariable<string>;
     state: SettingVariable<string>;
@@ -13,4 +13,4 @@ export interface HASettings {
     profile?: string;
 }
 
-export type ActionEventHA = ActionEvent<HASettings>;
+export type ActionEventHA = ActionEvent<HAActionSettings>;
