@@ -48,8 +48,7 @@ export class IconFactory {
 
     private async getDefaultBuilder(): Promise<IconBuilder> {
         return new IconBuilder(this.width, this.height)
-            .fillColor(this.backgroundColor)
-            .fillImage(await IconFactory.imageLibrary.getIcon(BackgroundLogo));
+            .fillColor(this.backgroundColor);
     }
 
     private async getIconWithMaskedColor(builder: IconBuilder, icon: string, mask: string, color?: string): Promise<IconBuilder> {

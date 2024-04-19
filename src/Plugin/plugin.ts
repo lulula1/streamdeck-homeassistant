@@ -61,7 +61,7 @@ const COLOR_TEMP_GRADIENT = ['#ffa200', '#ffa404', '#fea509', '#fea70d', '#fea81
             .then(updateActionIcon.bind(null, context, settings));
     });
 
-    const iconFactory: IconFactory = new IconFactory(128, 128, '#0a1423');
+    const iconFactory: IconFactory = new IconFactory(128, 128, '#0a1423b3');
 
     const updateActionIcon = async (context: string, settings: any, state: State) => {
         const entity = new Entity(state.entity_id);
