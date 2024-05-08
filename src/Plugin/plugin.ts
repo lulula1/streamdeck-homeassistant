@@ -39,7 +39,7 @@ const COLOR_TEMP_GRADIENT = ['#ffa200', '#ffa404', '#fea509', '#fea70d', '#fea81
         const entityId = getSettingValue(settings.state, variableSettings?.state);
         if (entityId)
             HA.getState(entityId)
-            .then(updateActionIcon.bind(null, context, settings));
+                .then(updateActionIcon.bind(null, context, settings));
     });
 
     // Get rid of button data as it's not shown anymore
@@ -58,7 +58,7 @@ const COLOR_TEMP_GRADIENT = ['#ffa200', '#ffa404', '#fea509', '#fea70d', '#fea81
         const entityId = getSettingValue(settings.state, variableSettings?.state);
         if (entityId)
             HA.getState(entityId)
-            .then(updateActionIcon.bind(null, context, settings));
+                .then(updateActionIcon.bind(null, context, settings));
     });
 
     const iconFactory: IconFactory = new IconFactory(128, 128, '#0a1423b3');
@@ -97,14 +97,15 @@ const COLOR_TEMP_GRADIENT = ['#ffa200', '#ffa404', '#fea509', '#fea70d', '#fea81
         setting.isVariable ? parentSetting?.value : setting.value;
 
     SD.on('keyPress', async (ev: ActionEventHA) => {
-        const { domain, service, state } = ev.payload.settings;
+        const { domain, service, state, serviceConfig } = ev.payload.settings;
         const { variableSettings } = await SD.getGlobalSettings();
         const realDomain = getSettingValue(domain, variableSettings?.domain);
         const realService = getSettingValue(service, variableSettings?.service);
         const realState = getSettingValue(state, variableSettings?.state);
+        const realServiceConfig = serviceConfig ? Object.fromEntries(serviceConfig.map(config => [config.fieldId, config.value])) : {};
         if (realDomain && realService && realState) {
-            SD.log(`${realService} ${realDomain} '${realState}'`);
-            HA.callService(realDomain, realService, { entity_id: realState });
+            SD.log(`${realService} ${realDomain} '${realState}' with config '${JSON.stringify(realServiceConfig)}'`);
+            HA.callService(realDomain, realService, { ...realServiceConfig, entity_id: realState });
         }
     })
 

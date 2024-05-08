@@ -1,5 +1,5 @@
 <template>
-    <button :class="`${props.small ? '' : 'sdpi-item-value'} ${active ? 'active' : ''}`">{{ props.label }}</button>
+    <button :class="`sdpi-item-value ${props.small ? 'small' : ''} ${active ? 'active' : ''}`">{{ props.label }}</button>
 </template>
 
 <script lang="ts" setup>
@@ -11,6 +11,10 @@ const props = defineProps<{
 </script>
 
 <style scoped>
+button.small {
+    flex: unset;
+    width: 23px;
+}
 button.active {
     border-color: var(--sdpi-secondary-color);
     background-color: var(--sdpi-secondary-bordercolor);

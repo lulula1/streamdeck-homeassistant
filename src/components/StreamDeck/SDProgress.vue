@@ -18,7 +18,7 @@ const props = withDefaults(defineProps<{
 });
 </script>
 
-<style>
+<style scoped>
 progress[value]::-webkit-progress-value {
     transition: width 0.5s;
 }

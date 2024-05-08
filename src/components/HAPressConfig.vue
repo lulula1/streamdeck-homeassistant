@@ -2,6 +2,9 @@
     <SDHeading>DOMAIN</SDHeading>
     <SDCarousel :key="carouselRefreshKey" :values="domainValues" :selectedValues="selectedDomainValues"
         @cardClick="onCardClick"></SDCarousel>
+    <SDMessage iconType="info">
+        Press again to change icon
+    </SDMessage>
     <SDHeading>ENTITY</SDHeading>
     <SDItem label="Entity">
         <SDSelect v-model="settings.state.value" :disabled="settings.state.isVariable">
@@ -9,19 +12,20 @@
                 {{ settings.state.isVariable ? '...' : stateValue.attributes.friendly_name || stateValue.entity_id }}
             </option>
         </SDSelect>
-        <SDButton label="≈" :active="settings.state.isVariable" title="Toggle variable mode"
-            @click="settings.state.isVariable = !settings.state.isVariable" class="variable-mode-toggle"></SDButton>
+        <SDButton label="≈" small :active="settings.state.isVariable" title="Toggle variable mode"
+            @click="settings.state.isVariable = !settings.state.isVariable"></SDButton>
     </SDItem>
     <SDHeading>PRESS CONFIGURATION</SDHeading>
     <SDItem label="Service">
-        <SDSelect v-model="settings.service.value" :disabled="settings.service.isVariable">
+        <SDSelect v-model="settings.service.value" :disabled="settings.service.isVariable" @change="resetServiceConfig">
             <option v-for="serviceValue in services" :key="serviceValue.id" :value="serviceValue.id">
                 {{ settings.service.isVariable ? '...' : serviceValue.name || serviceValue.id }}
             </option>
         </SDSelect>
-        <SDButton label="≈" :active="settings.service.isVariable" title="Toggle variable mode"
-            @click="settings.service.isVariable = !settings.service.isVariable" class="variable-mode-toggle"></SDButton>
+        <SDButton label="≈" small :active="settings.service.isVariable" title="Toggle variable mode"
+            @click="settings.service.isVariable = !settings.service.isVariable"></SDButton>
     </SDItem>
+    <HAServiceConfiguration v-if="!settings.service.isVariable" v-model="settings.serviceConfig" :fields="services.find(s => s.id === settings.service.value)?.fields || null" />
 </template>
 
 <script lang="ts" setup>
@@ -33,6 +37,7 @@ import type { CarouselValue } from './StreamDeck/SDCarousel.vue';
 import IconBuilder from '../lib/IconBuilder';
 import { IconFactory } from '../lib/IconFactory';
 import type { HAActionSettings } from '../lib/HASettings';
+import HAServiceConfiguration from './HAServiceConfiguration.vue';
 
 let SD: StreamDeckPI;
 let HA: HomeAssistant;
@@ -43,6 +48,7 @@ const settings = reactive({
     domain: { value: 'light' },
     state: { value: '' },
     service: { value: '' },
+    serviceConfig: [],
     iconVariant: 0,
 }) as HAActionSettings;
 
@@ -100,7 +106,12 @@ const onCardClick = (_ev: MouseEvent, cardValue: CarouselValue) => {
         settings.iconVariant = (settings.iconVariant + 1) % iconFactory.getIconVariantLength(cardValue.value as any);
     }
     loadCarouselIcons();
+    resetServiceConfig();
 }
+
+const resetServiceConfig = () => {
+    settings.serviceConfig = [];
+};
 
 onBeforeMount(async () => {
     const sdRef = inject('SD') as Ref<StreamDeckPI>;
@@ -130,10 +141,3 @@ onBeforeMount(async () => {
     });
 });
 </script>
-
-<style scoped>
-button.variable-mode-toggle {
-    flex: unset;
-    width: 25px;
-}
-</style>

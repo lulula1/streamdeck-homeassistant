@@ -571,19 +571,20 @@ details * {
 }
 
 details.message {
-  padding: 4px 18px 4px 12px;
+  padding: 4px 18px 4px 100px;
 }
 
 details.message summary {
   font-size: 10pt;
   font-weight: 600;
   min-height: 18px;
+  list-style: none;
 }
 
 details.message:first-child {
   margin-top: 4px;
   margin-left: 0;
-  padding-left: 102px;
+  padding-left: 102px !important;
 }
 
 details.message h1 {
